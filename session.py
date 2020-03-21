@@ -1,14 +1,26 @@
-from utils import get_scrum_keyboard
+from utils import get_scrum_keyboard, get_custom_keyboard
 
 
 class Session:
+
+    def set_keyboard(self,keys_list):
+        self.poll_keyboard = get_custom_keyboard(keys_list)
+
     def __init__(self, user_manager, bot):
         self.participants = {}
         self.bot = bot
         self.user_manager = user_manager
+        self.poll_keyboard = get_scrum_keyboard()
+
 
     def start(self, message):
         self.init_message = message
+
+        if '/options' in message.text:
+            options = message.text.split('/options(')[1].split(')')[0].split(',')
+            self.set_keyboard(options)
+            message.text = message.text.split('/options(')[0] + message.text.split('/options(')[1].split(')')[1]
+
         entities = [ent for ent in message.entities if ent.type == 'mention']
         usernames = [message.text[ent.offset:ent.offset + ent.length] for ent in entities]
         usernames = [user[1:] for user in usernames if user[-3:] != 'bot']
@@ -16,11 +28,10 @@ class Session:
         text = message.text[message_start:]
         self.vote_case = text
         user_ids = [self.user_manager.users[uname]['id'] for uname in usernames]
-        keyboard = get_scrum_keyboard()
         for uid, uname in zip(user_ids, usernames):
             self.participants[uname] = {'ready': False}
             self.bot.send_message(uid, f'Начато голосование по задаче {self.vote_case}')
-            self.bot.send_message(uid, 'Предложите оценку', reply_markup=keyboard)
+            self.bot.send_message(uid, 'Предложите оценку', reply_markup=self.poll_keyboard)
 
     def get_vote_text(self, user):
         return '{user}: {score}'.format(user=self.user_manager.users[user]['first_name'],
@@ -35,3 +46,4 @@ class Session:
                                                                     for user in self.participants])
             self.bot.reply_to(self.init_message, result_message)
             del self
+            Session.poll_keyboard = get_scrum_keyboard()

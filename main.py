@@ -12,7 +12,7 @@ user_manager = UserManager()
 session = None
 
 
-@bot.message_handler(commands=['poll'])
+@bot.message_handler(commands=['poll','options'])
 def poll_handler(message):
     global session
     if message.chat.type == 'group' and not session:
@@ -36,7 +36,6 @@ def callback_worker(call):
         session.vote(call.from_user.username, call.data)
         bot.send_message(call.from_user.id, f'Вы проголосовали {call.data}')
         bot.delete_message(call.from_user.id, call.message.message_id)
-
 
 print('start')
 bot.polling(none_stop=True, interval=0)
