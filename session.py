@@ -29,10 +29,21 @@ class Session:
         usernames = [message.text[ent.offset:ent.offset + ent.length] for ent in entities]
         usernames = [user[1:] for user in usernames if user[-3:] != 'bot']
         usernames = set(usernames)
-        message_start = max((ent.offset + ent.length for ent in entities))
+        message_start = max((ent.offset + ent.length for ent in entities)) + 1
         vote_case = message.text[message_start:]
 
         return vote_case, usernames, options
+
+    def run_new_case(self, message):
+        new_case = message.text.split('/newcase ')[1]
+        self.vote_case = new_case
+        self.init_message = message
+        for uname in self.participants:
+            self.participants[uname] = {'ready': False, 'registered': uname in self.user_manager.users}
+            self.send_poll_participation_request(uname)
+        self.bot.reply_to(message, f'Начато голосование по {self.vote_case}')
+        self.ongoing = True
+
 
     def start(self, message):
         self.init_message = message
